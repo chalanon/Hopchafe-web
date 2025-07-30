@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "hopchafe-184ad",
+    "staging": "hopchafe-184ad"
+  },
+  "targets": {},
+  "etags": {}
+}

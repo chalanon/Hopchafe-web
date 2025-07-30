@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ประวัติการสั่งซื้อ | Hopchafe</title>
+  
+  <!-- Fonts and Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #6a4c38;
+      --accent: #b77b4c;
+      --secondary: #fffbe9;
+      --success: #43a047;
+      --danger: #e53935;
+      --info: #1976d2;
+    }
+    body {
+      font-family: 'Sarabun', 'Kanit', sans-serif;
+      background: var(--secondary);
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px #b77b4c22;
+    }
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+    .receipt {
+      background: var(--secondary);
+      border-radius: 18px;
+      box-shadow: 0 2px 12px #b77b4c22;
+      padding: 1.5rem 2rem 1.2rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      border: 1.5px dashed var(--accent);
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+      animation: fadeInUp 0.7s cubic-bezier(.4,1.4,.6,1) both;
+    }
+    .receipt-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem;
+    }
+    .receipt-title {
+      font-size: 1.25rem; font-weight: bold; color: var(--primary);
+    }
+    .receipt-id {
+      font-size: 0.98rem; color: var(--accent); font-weight: 600;
+    }
+    .receipt-status {
+      font-size: 1.08rem; font-weight: 600; color: var(--accent); margin-bottom: 0.5em;
+      display: flex; align-items: center; gap: 0.5em;
+    }
+    .receipt-items {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 4px #b77b4c11;
+    }
+    .receipt-items ul {
+      padding-left: 1.2em; margin: 0;
+    }
+    .receipt-items li {
+      margin-bottom: 0.4em; color: #333; font-size: 1.05em;
+    }
+    .receipt-total {
+      font-size: 1.12rem; font-weight: bold; color: var(--primary); text-align: right; margin-bottom: 0.7em;
+    }
+    .receipt-date {
+      color: #888; font-size: 0.98rem; text-align: right;
+    }
+    .receipt-qr {
+      text-align: center; margin-top: 1.2em;
+    }
+    .receipt-qr img {
+      width: 80px; height: 80px; opacity: 0.7;
+    }
+    .no-orders {
+      text-align: center;
+      color: #999;
+      margin-top: 2rem;
+    }
+    .reorder-btn {
+      background: var(--accent);
+      color: #fff;
+      padding: 0.4rem 1.2rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 0.7rem;
+      box-shadow: 0 2px 8px #b77b4c22;
+      transition: background 0.2s;
+    }
+    .reorder-btn:hover {
+      background: var(--primary);
+    }
+    .review-btn {
+      background: var(--success);
+      color: #fff;
+      padding: 0.4rem 1.2rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #43a04722;
+      transition: background 0.2s;
+    }
+    .review-btn:hover {
+      background: var(--accent);
+    }
+    a[href^="tel"] {
+      background: var(--success) !important;
+      color: #fff !important;
+      box-shadow: 0 2px 8px #43a04733 !important;
+    }
+    #helpBtn {
+      background: var(--info) !important;
+      color: #fff !important;
+      box-shadow: 0 2px 8px #1976d233 !important;
+    }
+    #helpBtn:hover {
+      background: var(--accent) !important;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px);}
+      to { opacity: 1; transform: none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ประวัติการสั่งซื้อของฉัน</h2>
+    <div id="orderList" class="order-list">
+<div class="no-orders">กำลังโหลดข้อมูล...</div>
+<div style="display:flex;gap:1rem;justify-content:space-between;margin:1.2rem 0 0.5rem 0;">
+  <a href="tel:0999999999" style="background:#43a047;color:#fff;padding:0.7rem 1.2rem;border-radius:12px;text-decoration:none;font-weight:700;box-shadow:0 2px 8px #43a04733;display:inline-block;">📞 โทรร้าน</a>
+  <button id="helpBtn" style="background:#1976d2;color:#fff;padding:0.7rem 1.2rem;border:none;border-radius:12px;font-weight:700;box-shadow:0 2px 8px #1976d233;cursor:pointer;">❓ ช่วยเหลือ/FAQ</button>
+</div>
+    </div>
+  </div>
+
+  <script src="/__/firebase/11.10.0/firebase-app-compat.js"></script>
+  <script src="/__/firebase/11.10.0/firebase-auth-compat.js"></script>
+  <script src="/__/firebase/11.10.0/firebase-firestore-compat.js"></script>
+  <script src="/__/firebase/init.js?useEmulator=true"></script>
+  
+  <script>
+
+    const app = firebase.app();
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const orderList = document.getElementById('orderList');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        orderList.innerHTML = "<div class='no-orders'>กรุณาเข้าสู่ระบบ</div>";
+        return;
+      }
+
+      const ordersRef = db.collection("orders");
+      const q = ordersRef.where("userId", "==", user.uid);
+
+      try {
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          orderList.innerHTML = "<div class='no-orders'>คุณยังไม่มีประวัติการสั่งซื้อ</div>";
+        } else {
+          orderList.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const createdAt = data.created?.seconds ? new Date(data.created.seconds * 1000).toLocaleString('th-TH') : "-";
+            const orderId = doc.id;
+            // สินค้า
+            let itemsHtml = '';
+            if (Array.isArray(data.items) && data.items.length > 0) {
+              itemsHtml = '<ul>' + data.items.map(item => `<li>${item.name} x ${item.qty} (${item.price} บาท${item.topping ? ', ' + item.topping : ''}${item.sweetness ? ', หวาน: ' + item.sweetness : ''})</li>`).join('') + '</ul>';
+            } else {
+              itemsHtml = '<div style="color:#aaa;">ไม่มีข้อมูลสินค้า</div>';
+            }
+            // ไอคอนสถานะ
+            let statusIcon = '<i class="fa-solid fa-hourglass-half"></i>';
+            let statusColor = '#b77b4c';
+            if (data.status && data.status.includes('สำเร็จ')) {
+              statusIcon = '<i class="fa-solid fa-circle-check"></i>';
+              statusColor = '#43a047';
+            } else if (data.status && data.status.includes('ยกเลิก')) {
+              statusIcon = '<i class="fa-solid fa-circle-xmark"></i>';
+              statusColor = '#e53935';
+            } else if (data.status && data.status.includes('กำลังจัดส่ง')) {
+              statusIcon = '<i class="fa-solid fa-truck"></i>';
+              statusColor = '#1976d2';
+            }
+            // QR code mockup
+            const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=' + encodeURIComponent(orderId);
+            const div = document.createElement("div");
+            div.className = "receipt";
+            // รูปสินค้า (mockup)
+            let imgHtml = '';
+            if (data.cart && data.cart[0] && data.cart[0].img) {
+              imgHtml = '<img src="' + data.cart[0].img + '" alt="img" style="width:60px;height:60px;border-radius:12px;margin-right:1rem;object-fit:cover;box-shadow:0 2px 8px #b77b4c22;">';
+            } else {
+              imgHtml = '<div style="width:60px;height:60px;border-radius:12px;background:#eee;display:inline-block;margin-right:1rem;"></div>';
+            }
+            // ปุ่ม reorder, รีวิว/ให้คะแนน
+            let reviewHtml = '<button class="reorder-btn" style="background:#b77b4c;color:#fff;padding:0.4rem 1.2rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;margin-right:0.7rem;">สั่งซ้ำ</button>';
+            reviewHtml += '<button class="review-btn" style="background:#43a047;color:#fff;padding:0.4rem 1.2rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;">ให้คะแนน/รีวิว</button>';
+            div.innerHTML =
+              '<div style="display:flex;align-items:flex-start;">'
+              + imgHtml +
+              '<div class="order-history-info" style="flex:1;">'
+                + '<div class="order-history-id">Order: <span style="color:#b77b4c;">' + orderId + '</span></div>'
+                + '<div class="order-history-status" style="color:' + statusColor + ';">' + statusIcon + ' ' + (data.status || '-') + ' </div>'
+                + '<div class="order-history-time">' + (data.created ? new Date(data.created.seconds*1000).toLocaleString('th-TH') : '-') + ' </div>'
+                + '<div class="order-history-items">' + itemsHtml + '</div>'
+                + '<div class="order-history-total">รวม: <span style="color:#b77b4c;">' + (data.total || 0) + ' บาท</span></div>'
+                + '<div style="margin-top:0.7rem;">' + reviewHtml + '</div>'
+              + '</div>'
+            + '</div>';
+            orderList.appendChild(div);
+      // Event ปุ่ม reorder, รีวิว
+      setTimeout(() => {
+        document.querySelectorAll('.reorder-btn').forEach(btn => {
+          btn.onclick = function() {
+            alert('ฟีเจอร์สั่งซ้ำ (mockup): จะคัดลอกออเดอร์นี้ไปยังตะกร้า');
+          };
+        });
+        document.querySelectorAll('.review-btn').forEach(btn => {
+          btn.onclick = function() {
+            alert('ฟีเจอร์ให้คะแนน/รีวิว (mockup): ขอบคุณสำหรับรีวิว!');
+          };
+        });
+      }, 500);
+// ปุ่มช่วยเหลือ/FAQ
+document.getElementById('helpBtn').onclick = () => {
+  alert('FAQ/ช่วยเหลือ\n\n- ดูประวัติ: คลิกที่รายการเพื่อดูรายละเอียด\n- ปัญหาการจัดส่ง: โทร 099-999-9999\n- เวลาจัดส่ง: ประมาณ 5-10 นาที\n- ติดต่อร้าน: โทร 099-999-9999');
+};
+            orderList.appendChild(div);
+          });
+        }
+      } catch (err) {
+        orderList.innerHTML = "<div class='no-orders'>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
