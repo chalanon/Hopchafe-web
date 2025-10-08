@@ -203,6 +203,53 @@ const auth = getAuth(app);
   import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
   let unsubscribe = null;
   let autoRefreshTimer = null;
+  // ฟังก์ชันอัพเดทสถานะอัตโนมัติ
+  async function autoUpdateStatus(orderId, currentStatus, orderType) {
+    const statusSteps = orderType === 'delivery' ? 
+      ['รอดำเนินการ', 'กำลังจัดเตรียม', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'] :
+      ['รอดำเนินการ', 'กำลังจัดเตรียม', 'พร้อมรับที่ร้าน', 'รับที่ร้านสำเร็จ'];
+    
+    const currentIndex = statusSteps.indexOf(currentStatus);
+    if (currentIndex === -1 || currentIndex >= statusSteps.length - 1) return;
+
+    const nextStatus = statusSteps[currentIndex + 1];
+    const timeouts = [15000, 30000, 45000]; // 15, 30, 45 วินาที ตามลำดับ
+
+    try {
+      setTimeout(async () => {
+        await db.collection('orders').doc(orderId).update({
+          status: nextStatus,
+          updated: new Date()
+        });
+
+        // แสดงการแจ้งเตือน
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: var(--accent);
+          color: white;
+          padding: 1rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+          animation: fadeInRight 0.5s ease;
+          z-index: 1000;
+        `;
+        notification.innerHTML = `<i class="fas fa-info-circle"></i> อัพเดทสถานะเป็น: ${nextStatus}`;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+
+        // เรียกฟังก์ชันอีกครั้งสำหรับสถานะถัดไป
+        if (nextStatus !== statusSteps[statusSteps.length - 1]) {
+          autoUpdateStatus(orderId, nextStatus, orderType);
+        }
+      }, timeouts[currentIndex]);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  }
+
   function renderOrders(snapshot, orderList) {
     if (snapshot.empty) {
       orderList.innerHTML = '<div class="empty-order">ยังไม่มีออเดอร์</div>';
@@ -213,6 +260,11 @@ const auth = getAuth(app);
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
       const orderId = docSnap.id;
+
+      // เริ่มอัพเดทสถานะอัตโนมัติสำหรับออเดอร์ใหม่
+      if (data.status === 'รอดำเนินการ') {
+        autoUpdateStatus(orderId, data.status, data.orderType || 'delivery');
+      }
       // เลือกไอคอนตามสถานะ
       let statusIcon = '<i class="fa-solid fa-hourglass-half"></i>';
       let statusColor = '#b77b4c';
@@ -231,15 +283,39 @@ const auth = getAuth(app);
       }
       const div = document.createElement('div');
       div.className = 'order-card ' + highlight;
+      
+      // คำนวณเวลาที่เหลือสำหรับการอัพเดทสถานะถัดไป
+      let timeLeftText = '';
+      if (!data.status?.includes('สำเร็จ') && !data.status?.includes('ยกเลิก')) {
+        const currentIndex = (data.orderType === 'pickup' ? 
+          ['รอดำเนินการ', 'กำลังจัดเตรียม', 'พร้อมรับที่ร้าน', 'รับที่ร้านสำเร็จ'] :
+          ['รอดำเนินการ', 'กำลังจัดเตรียม', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ']
+        ).indexOf(data.status);
+
+        if (currentIndex >= 0 && currentIndex < 3) {
+          const timeouts = [15, 30, 45];
+          timeLeftText = `<div style="color:#1976d2;font-size:0.9rem;margin-top:0.3rem;">
+            อีกประมาณ ${timeouts[currentIndex]} วินาที จะอัพเดทเป็นสถานะถัดไป
+          </div>`;
+        }
+      }
+
       div.innerHTML = `
         <div class="order-icon">${statusIcon}</div>
         <div class="order-info">
           <div class="order-id">Order: <span style="color:#b77b4c;">${orderId}</span></div>
-          <div class="order-status" style="color:${statusColor};font-size:1.13rem;">${statusIcon} ${data.status || '-'}
+          <div class="order-status" style="color:${statusColor};font-size:1.13rem;">
+            ${statusIcon} ${data.status || '-'}
             ${(highlight==='order-success') ? '<span style="margin-left:0.5em;color:#43a047;font-weight:700;">✔ สำเร็จ</span>' : ''}
             ${(highlight==='order-cancel') ? '<span style="margin-left:0.5em;color:#e53935;font-weight:700;">✖ ยกเลิก</span>' : ''}
           </div>
-          <div class="order-time">${data.created ? new Date(data.created.seconds*1000).toLocaleString('th-TH') : '-'}</div>
+          <div style="color:#666;margin-top:0.2rem;">
+            ${data.orderType === 'pickup' ? '📍 รับที่ร้าน' : '🚚 จัดส่ง'}
+          </div>
+          <div class="order-time">
+            สั่งเมื่อ: ${data.created ? new Date(data.created.seconds*1000).toLocaleString('th-TH') : '-'}
+          </div>
+          ${timeLeftText}
         </div>
       `;
       timeline.appendChild(div);
