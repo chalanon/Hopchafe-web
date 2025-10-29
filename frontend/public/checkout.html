@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout | Hopchafe</title>
+
+  <!-- Libraries -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    /* ===== Theme variables ===== */
+    :root{
+      --bg: #fbf9f6;
+      --card: #ffffff;
+      --primary: #6f4e37;
+      --primary-600: #5e3f2d;
+      --accent: #c0a98e;
+      --muted: #9e8f84;
+      --success: #28a745;
+      --danger: #dc3545;
+      --glass: rgba(255,255,255,0.6);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --shadow-sm: 0 4px 12px rgba(15,15,15,0.07);
+      --shadow-md: 0 8px 28px rgba(15,15,15,0.10);
+      --max-width: 980px;
+      --mobile-gap: 14px;
+    }
+
+    /* ===== Base ===== */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Kanit", "Sarabun", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, var(--bg) 0%, #fff 100%);
+      color: #2b2b2b;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      justify-content:center;
+      padding:24px 16px;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:var(--max-width);
+    }
+
+    header.app-header{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      background: linear-gradient(90deg,var(--primary) 40%, var(--accent) 100%);
+      color:white;
+      padding:18px;
+      border-radius:14px;
+      box-shadow:var(--shadow-md);
+      margin-bottom:18px;
+    }
+    .logo{
+      width:56px;
+      height:56px;
+      border-radius:12px;
+      overflow:hidden;
+      flex:0 0 56px;
+      box-shadow:var(--shadow-sm);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(255,255,255,0.06);
+    }
+    .logo img{width:100%;height:100%;object-fit:cover}
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .brand .title{
+      font-size:1.35rem;
+      font-weight:800;
+      letter-spacing:1px;
+    }
+    .brand .subtitle{
+      font-size:0.9rem;
+      opacity:0.95;
+    }
+
+    /* ===== User info bar ===== */
+    .user-bar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      background:linear-gradient(180deg, rgba(111,78,55,0.06), rgba(192,169,142,0.03));
+      padding:10px 14px;
+      border-radius:12px;
+      margin-bottom:16px;
+      box-shadow:var(--shadow-sm);
+      font-size:0.95rem;
+    }
+    .user-left{display:flex;align-items:center;gap:10px}
+    .avatar{
+      width:42px;height:42px;border-radius:10px;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;
+      box-shadow:0 2px 8px rgba(0,0,0,0.12)
+    }
+    .user-meta{display:flex;flex-direction:column}
+    .user-meta .name{font-weight:700;color:var(--primary-600)}
+    .user-meta .email{font-size:0.85rem;color:var(--muted)}
+    .user-right{display:flex;align-items:center;gap:12px}
+    .time-badge{font-weight:600;color:var(--primary-600);font-size:0.95rem}
+    .login-btn,.logout-btn{background:var(--primary);color:white;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+    .logout-btn{background:transparent;color:var(--primary);border:2px solid var(--primary);padding:6px 10px}
+
+    /* ===== Layout grid (desktop) ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:20px;
+      align-items:start;
+    }
+
+    /* ===== Cards ===== */
+    .card{
+      background:var(--card);
+      border-radius:var(--radius-md);
+      padding:16px;
+      box-shadow:var(--shadow-sm);
+    }
+    .card h3{margin:0 0 12px 0;color:var(--primary);font-size:1.05rem}
+    .muted{color:var(--muted);font-size:0.95rem}
+
+    /* ===== Summary list ===== */
+    #summaryList{
+      max-height:300px;overflow:auto;padding:8px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfbfb);
+      border:1px solid rgba(0,0,0,0.03)
+    }
+    .item-row{
+      display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.03);
+    }
+    .item-row:last-child{margin-bottom:0}
+    .item-title{font-weight:700;color:#3b2d26}
+    .item-meta{font-size:0.9rem;color:var(--muted)}
+    .summary-footer{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+    .total-row{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:1.05rem;color:var(--primary-600)}
+
+    /* ===== Controls ===== */
+    select.form-control, input.form-control{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem;
+      background:white;
+    }
+
+    .payment-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .pay-card{
+      flex:1 1 120px;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;gap:10px;cursor:pointer;background:linear-gradient(180deg,#fff,#fbfbfb)
+    }
+    .pay-card.active{border-color:var(--primary);background:linear-gradient(180deg, rgba(111,78,55,0.06), #fff)}
+
+    /* ===== Map card ===== */
+    .map-wrap{display:flex;flex-direction:column;gap:10px}
+    #minimap{width:100%;height:360px;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid rgba(0,0,0,0.04)}
+
+    .map-note{font-size:0.92rem;color:var(--muted);padding:8px;border-radius:8px;background:linear-gradient(180deg,#fff,#fbfbfb);border:1px solid rgba(0,0,0,0.03)}
+
+    /* ===== Actions ===== */
+    .actions{
+      display:flex;gap:12px;margin-top:14px;
+    }
+    .btn{
+      border-radius:12px;padding:12px 14px;font-weight:800;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:10px;
+    }
+    .btn-primary{background:var(--primary);color:white;box-shadow:var(--shadow-sm)}
+    .btn-ghost{background:transparent;border:2px solid var(--primary);color:var(--primary)}
+    .btn-full{flex:1}
+
+    .small-muted{font-size:0.9rem;color:var(--muted);margin-top:8px;text-align:center}
+
+    /* ===== Responsive ===== */
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr;gap:var(--mobile-gap)}
+      #minimap{height:300px}
+      .map-wrap{order:3}
+    }
+    @media (max-width:480px){
+      body{padding:18px 12px}
+      header.app-header{padding:12px;border-radius:12px}
+      .logo{width:48px;height:48px}
+      .brand .title{font-size:1.05rem}
+      .user-bar{padding:10px;border-radius:10px;flex-direction:column;align-items:flex-start;gap:8px}
+      .actions{flex-direction:column}
+      .btn{width:100%}
+      .map-wrap{order:4}
+    }
+
+    /* ===== Small helpers ===== */
+    .hidden{display:none}
+    .center{text-align:center}
+    .btn-close{position:absolute;top:10px;right:10px;border:none;background:transparent;color:var(--primary);font-size:1.1rem;cursor:pointer}
+    /* custom scrollbar */
+    #summaryList::-webkit-scrollbar{width:8px}
+    #summaryList::-webkit-scrollbar-thumb{background:rgba(111,78,55,0.18);border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap" role="main">
+    <header class="app-header" aria-label="หัวเว็บ Hopchafe">
+      <div class="logo" aria-hidden="true">
+        <img alt="Hopchafe" src="https://play-lh.googleusercontent.com/zEe6Ugn1OoFIeP0bYbzqcnP_f0-5HkaYDfwqpMFfBV7Mz0u93XpKUklXXr6ed4uSx7Q" />
+      </div>
+      <div class="brand">
+        <div class="title">Hopchafe Checkout</div>
+        <div class="subtitle">ยืนยันคำสั่งซื้อ — จัดส่งสะดวก รวดเร็ว</div>
+      </div>
+    </header>
+
+    <!-- User Info Bar -->
+    <div class="user-bar">
+      <div class="user-left">
+        <div id="profileBox" class="avatar" aria-hidden="true">—</div>
+        <div class="user-meta">
+          <div id="profileName" class="name">ไม่ได้เข้าสู่ระบบ</div>
+          <div id="profileEmail" class="email">กรุณาเข้าสู่ระบบเพื่อสั่งซื้อ</div>
+        </div>
+      </div>
+      <div class="user-right">
+        <div id="currentDateTime" class="time-badge" aria-live="polite">--</div>
+        <button id="authAction" class="login-btn">Login</button>
+      </div>
+    </div>
+
+    <div class="grid" role="region" aria-label="เนื้อหาหน้า checkout">
+      <!-- LEFT: cart & checkout controls -->
+      <div>
+        <section class="card" aria-labelledby="cartTitle">
+          <h3 id="cartTitle"><i class="fas fa-shopping-cart"></i> รายการสินค้าในตะกร้า</h3>
+          <div id="summaryList" role="list" aria-live="polite"></div>
+          <div class="summary-footer">
+            <div class="total-row">
+              <div>รวม (ไม่รวมค่าส่ง)</div>
+              <div id="subTotal">0 ฿</div>
+            </div>
+            <div class="total-row">
+              <div>ค่าส่งโดยประมาณ</div>
+              <div id="deliveryFee">0 ฿</div>
+            </div>
+            <div class="total-row" style="font-size:1.15rem;">
+              <div>ยอดชำระทั้งหมด</div>
+              <div id="grandTotal">0 ฿</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="deliveryTitle" style="margin-top:14px;">
+          <h3 id="deliveryTitle"><i class="fas fa-truck"></i> วิธีรับสินค้า</h3>
+          <div class="form-group">
+            <select id="delivery-method" class="form-control" aria-label="เลือกวิธีรับสินค้า">
+              <option value="pickup">รับที่ร้าน</option>
+              <option value="delivery">จัดส่ง</option>
+            </select>
+          </div>
+
+          <div id="deliveryInfo" class="muted">เลือก "จัดส่ง" เพื่อระบุตำแหน่งจัดส่งบนแผนที่</div>
+        </section>
+
+        <section id="paymentSection" class="card" aria-labelledby="payTitle" style="margin-top:14px;">
+          <h3 id="payTitle"><i class="fas fa-credit-card"></i> วิธีชำระเงิน</h3>
+
+          <div class="payment-grid" role="radiogroup" aria-label="วิธีชำระเงิน">
+            <label class="pay-card active" data-value="cash">
+              <input type="radio" name="paymethod" value="cash" checked style="display:none" />
+              <i class="fas fa-money-bill-wave"></i>
+              <div>เงินสด</div>
+            </label>
+
+            <label class="pay-card" data-value="qr">
+              <input type="radio" name="paymethod" value="qr" style="display:none" />
+              <i class="fas fa-qrcode"></i>
+              <div>QR Code</div>
+            </label>
+
+            <label class="pay-card" data-value="credit">
+              <input type="radio" name="paymethod" value="credit" style="display:none" />
+              <i class="fas fa-credit-card"></i>
+              <div>บัตรเครดิต</div>
+            </label>
+          </div>
+
+          <div id="qrSection" class="card" style="margin-top:12px;display:none; padding:12px;">
+            <div class="center">
+              <img id="qrImg" src="https://promptpay.io/0999999999/100.png" alt="QR Code" style="max-width:220px;border-radius:8px;box-shadow:var(--shadow-sm);cursor:pointer" />
+              <div class="small-muted">แตะเพื่อขยาย QR แล้วสแกน</div>
+            </div>
+          </div>
+
+          <div id="creditSection" style="display:none;margin-top:12px;">
+            <div style="display:grid;gap:8px">
+              <input id="credit-number" class="form-control" placeholder="เลขบัตร 16 หลัก" inputmode="numeric" maxlength="16" />
+              <input id="credit-name" class="form-control" placeholder="ชื่อบนบัตร" />
+            </div>
+          </div>
+        </section>
+
+        <div class="actions" style="margin-top:12px;">
+          <button id="confirmBtn" class="btn btn-primary btn-full" aria-label="ยืนยันชำระเงิน" disabled>
+            <i class="fas fa-check"></i> ยืนยันและชำระเงิน
+          </button>
+
+          <button id="backBtn" class="btn btn-ghost" style="min-width:150px;">
+            <i class="fas fa-arrow-left"></i> กลับไปเมนู
+          </button>
+        </div>
+
+        <div class="small-muted center">คุณสามารถดูออเดอร์ย้อนหลังได้ที่หน้าดูออเดอร์</div>
+      </div>
+
+      <!-- RIGHT: map & delivery details -->
+      <aside>
+        <section class="card map-wrap" aria-labelledby="mapTitle">
+          <h3 id="mapTitle"><i class="fas fa-map-marker-alt"></i> ตำแหน่งจัดส่ง</h3>
+
+          <div class="delivery-zone-info muted" style="padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.03);background:linear-gradient(180deg,#fff,#fbfbfb)">
+            <strong>🎯 พื้นที่จัดส่ง:</strong> ภายในรัศมี 2 กิโลเมตรจากร้าน
+            <div class="small-muted" style="margin-top:6px">วงกลมสีน้ำตาลคือขอบเขตจัดส่ง</div>
+          </div>
+
+          <div class="map-instructions map-note">
+            <i class="fas fa-info-circle"></i>
+            ลากหมุดสีแดงเพื่อเลือกตำแหน่งจัดส่ง หรือแตะที่แผนที่
+          </div>
+
+          <div id="minimap" role="region" aria-label="แผนที่ตำแหน่งจัดส่ง"></div>
+
+          <div style="margin-top:10px;">
+            <div class="muted">ระยะจากร้าน: <span id="distanceDisplay">0 กม.</span></div>
+            <div class="muted">ค่าส่งโดยประมาณ: <strong id="deliveryFeeDisplay">0 ฿</strong></div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:14px;">
+          <h3 class="center muted">จัดการคำสั่งซื้อ</h3>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="clearCartBtn" class="btn btn-ghost btn-full"><i class="fas fa-trash"></i> ล้างตะกร้า</button>
+            <a href="order_status.html" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-receipt"></i>&nbsp;ดูออเดอร์</a>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- small modals / overlays -->
+    <div id="qrPopup" class="card hidden" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;max-width:92%;box-shadow:var(--shadow-md)">
+      <button class="btn-close" onclick="closeQRPopup()" aria-label="ปิด QR">✕</button>
+      <div class="center" style="padding:12px">
+        <img id="largeQR" src="" alt="QR ขยาย" style="max-width:100%;height:auto;border-radius:8px" />
+      </div>
+    </div>
+
+    <div id="popupSuccess" class="card hidden" style="position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:9999;max-width:420px;">
+      <div class="center" style="padding:10px 16px">
+        <div style="font-size:1.2rem;font-weight:800;color:var(--success)"><i class="fas fa-check-circle"></i> ดำเนินการสำเร็จ</div>
+        <p class="muted" id="popupMsg">ขอบคุณ! ระบบได้รับคำสั่งซื้อแล้ว</p>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="window.location.href='order_status.html'" class="btn btn-primary btn-full">ดูสถานะออเดอร์</button>
+          <button onclick="closeSuccess()" class="btn btn-ghost" style="min-width:120px">ปิด</button>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- /.wrap -->
+
+  <!-- ===== JavaScript ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlNofFy2Q0xZNrQRGdTT-7Tf3ELoL4gZg",
+      authDomain: "hopchafe-184ad.firebaseapp.com",
+      projectId: "hopchafe-184ad",
+      storageBucket: "hopchafe-184ad.appspot.com",
+      messagingSenderId: "314546539339",
+      appId: "1:314546539339:web:22b31673662662f27236ce"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ----- UI helpers -----
+    const profileBox = document.getElementById('profileBox');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const authAction = document.getElementById('authAction');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    function shortName(email){
+      if(!email) return '—';
+      return email.split('@')[0].slice(0,2).toUpperCase();
+    }
+
+    function prettyCurrency(n){
+      return n.toLocaleString('th-TH') + ' ฿';
+    }
+
+    // ----- realtime time -----
+    function updateDateTime(){
+      const now = new Date();
+      const s = now.toISOString().replace('T',' ').substring(0,19) + ' UTC';
+      document.getElementById('currentDateTime').textContent = s;
+    }
+    setInterval(updateDateTime,1000);
+    updateDateTime();
+
+    // ----- Auth state -----
+    let currentUser = null;
+    onAuthStateChanged(auth, user=>{
+      currentUser = user;
+      if(user){
+        profileBox.textContent = shortName(user.email);
+        profileName.textContent = user.displayName || user.email.split('@')[0];
+        profileEmail.textContent = user.email;
+        authAction.textContent = 'ออกจากระบบ';
+        authAction.classList.remove('login-btn');
+        authAction.classList.add('logout-btn');
+        authAction.onclick = ()=> logout();
+
+        // enable confirm button for authenticated users
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = 1;
+      } else {
+        profileBox.textContent = '—';
+        profileName.textContent = 'ไม่ได้เข้าสู่ระบบ';
+        profileEmail.textContent = 'กรุณาเข้าสู่ระบบเพื่อสั่งซื้อ';
+        authAction.textContent = 'Login / Register';
+        authAction.classList.remove('logout-btn');
+        authAction.classList.add('login-btn');
+        authAction.onclick = ()=> window.location.href = 'login.html';
+
+        // disable confirm button for unauthenticated users
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = 0.6;
+      }
+    });
+
+    async function logout(){
+      try{
+        await signOut(auth);
+        location.reload();
+      }catch(e){
+        alert('เกิดข้อผิดพลาดการออกจากระบบ: ' + e.message);
+      }
+    }
+
+    // ----- Cart rendering & totals -----
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const summaryList = document.getElementById('summaryList');
+    const subTotalEl = document.getElementById('subTotal');
+    const deliveryFeeEl = document.getElementById('deliveryFee');
+    const grandTotalEl = document.getElementById('grandTotal');
+
+    function renderCart(){
+      summaryList.innerHTML = '';
+      if(!cart.length){
+        summaryList.innerHTML = '<div class="center muted">ไม่มีสินค้าในตะกร้า</div>';
+        updateTotals();
+        return;
+      }
+      cart.forEach((it, idx)=>{
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div>
+            <div class="item-title">${escapeHtml(it.name)}</div>
+            <div class="item-meta">${it.qty} × ${prettyCurrency(it.price)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800">${prettyCurrency(it.price * it.qty)}</div>
+            <div style="margin-top:6px">
+              <button data-i="${idx}" class="btn btn-ghost" style="padding:6px 8px;font-size:0.85rem">ลบ</button>
+            </div>
+          </div>
+        `;
+        summaryList.appendChild(row);
+      });
+      // attach delete listeners
+      summaryList.querySelectorAll('button[data-i]').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+          const i = Number(btn.dataset.i);
+          cart.splice(i,1);
+          localStorage.setItem('cart', JSON.stringify(cart));
+          renderCart();
+        });
+      });
+      updateTotals();
+    }
+
+    function updateTotals(){
+      const subtotal = cart.reduce((s,it)=> s + (it.price * (it.qty||1)), 0);
+      const deliveryFee = window.__deliveryFeeComputed || 0;
+      const grand = Math.round(subtotal + deliveryFee);
+      subTotalEl.textContent = prettyCurrency(subtotal);
+      deliveryFeeEl.textContent = prettyCurrency(Math.round(deliveryFee));
+      grandTotalEl.textContent = prettyCurrency(grand);
+    }
+
+    function escapeHtml(str){
+      if(!str) return '';
+      return String(str).replace(/[&<>"]/g, tag=>{
+        const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' };
+        return map[tag] || tag;
+      });
+    }
+
+    renderCart();
+
+    // clear cart button
+    document.getElementById('clearCartBtn').addEventListener('click', ()=>{
+      if(!cart.length){ alert('ตะกร้าว่างอยู่แล้ว'); return; }
+      if(confirm('ลบสินค้าทั้งหมดจากตะกร้าหรือไม่?')){
+        cart = [];
+        localStorage.removeItem('cart');
+        renderCart();
+      }
+    });
+
+    // back to menu
+    document.getElementById('backBtn').addEventListener('click', ()=> window.location.href = 'menu.html');
+
+    // ----- Payment method UI -----
+    const payCards = Array.from(document.querySelectorAll('.pay-card'));
+    payCards.forEach(card=>{
+      card.addEventListener('click',()=>{
+        payCards.forEach(c=>c.classList.remove('active'));
+        card.classList.add('active');
+        const v = card.dataset.value;
+        document.querySelector(`input[name="paymethod"][value="${v}"]`).checked = true;
+        document.getElementById('qrSection').style.display = v === 'qr' ? 'block' : 'none';
+        document.getElementById('creditSection').style.display = v === 'credit' ? 'block' : 'none';
+      });
+    });
+
+    // QR popup
+    const qrImg = document.getElementById('qrImg');
+    qrImg && qrImg.addEventListener('click', ()=>{
+      document.getElementById('largeQR').src = qrImg.src;
+      document.getElementById('qrPopup').classList.remove('hidden');
+    });
+    function closeQRPopup(){ document.getElementById('qrPopup').classList.add('hidden'); }
+
+    // ----- Map & Delivery logic (Leaflet) -----
+    const shopLat = 6.940180, shopLng = 100.467620;
+    let userLat = shopLat, userLng = shopLng;
+    let deliveryFee = 0;
+    window.__deliveryFeeComputed = 0;
+
+    const map = L.map('minimap', { center:[shopLat,shopLng], zoom:14, zoomControl:true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19, attribution:'© OpenStreetMap contributors' }).addTo(map);
+
+    const shopIcon = L.divIcon({ html:`<div style="background:${getComputedStyle(document.documentElement).getPropertyValue('--primary')};width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff">☕</div>`, className:'shop-icon' });
+    const deliveryIcon = L.divIcon({ html:`<div style="background:#dc3545;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff">📍</div>`, className:'delivery-icon' });
+
+    L.marker([shopLat,shopLng],{icon:shopIcon}).addTo(map).bindPopup('ร้าน Hopchafe');
+
+    const areaCircle = L.circle([shopLat,shopLng], { radius:2000, color:getComputedStyle(document.documentElement).getPropertyValue('--primary'), fillColor:getComputedStyle(document.documentElement).getPropertyValue('--accent'), fillOpacity:0.12, weight:2 }).addTo(map);
+
+    let userMarker = L.marker([shopLat,shopLng], { draggable:true, icon:deliveryIcon }).addTo(map).bindPopup('ตำแหน่งจัดส่ง (ลากเพื่อเปลี่ยน)').openPopup();
+
+    function toRad(x){ return x * Math.PI / 180; }
+    function calculateDistance(lat1,lon1,lat2,lon2){
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function updateDelivery(lat,lng){
+      const dist = calculateDistance(lat,lng,shopLat,shopLng);
+      const fee = Math.max(0, dist * 5); // 5 ฿ / km
+      deliveryFee = Math.round(fee);
+      window.__deliveryFeeComputed = deliveryFee;
+      document.getElementById('distanceDisplay').textContent = dist.toFixed(2) + ' กม.';
+      document.getElementById('deliveryFeeDisplay').textContent = deliveryFee + ' ฿';
+      updateTotals();
+    }
+
+    userMarker.on('dragend', function(e){
+      const {lat,lng} = e.target.getLatLng();
+      const dist = calculateDistance(lat,lng,shopLat,shopLng);
+      if(dist > 2){
+        const angle = Math.atan2(lng - shopLng, lat - shopLat);
+        const newLat = shopLat + (1.99 / 111) * Math.cos(angle);
+        const newLng = shopLng + (1.99 / (111 * Math.cos(shopLat * Math.PI / 180))) * Math.sin(angle);
+        userMarker.setLatLng([newLat,newLng]);
+        userLat = newLat; userLng = newLng;
+        alert('ตำแหน่งต้องอยู่ภายใน 2 กม. ระบบจะปรับตำแหน่งให้อยู่ในพื้นที่');
+      } else {
+        userLat = lat; userLng = lng;
+      }
+      updateDelivery(userLat,userLng);
+    });
+
+    map.on('click', function(e){
+      const {lat,lng} = e.latlng;
+      const dist = calculateDistance(lat,lng,shopLat,shopLng);
+      if(dist <= 2){
+        userMarker.setLatLng([lat,lng]);
+        userLat = lat; userLng = lng;
+        updateDelivery(userLat,userLng);
+      } else {
+        alert('กรุณาเลือกตำแหน่งภายในวงกลม 2 กม.');
+      }
+    });
+
+    // try geolocation
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+        const dist = calculateDistance(lat,lng,shopLat,shopLng);
+        if(dist <= 2){
+          userMarker.setLatLng([lat,lng]);
+          userLat = lat; userLng = lng;
+          updateDelivery(lat,lng);
+        }
+      }, err=>{ /* ignore */ }, { enableHighAccuracy:true, timeout:8000 });
+    }
+
+    // hide map by default if pickup
+    const deliveryMethodEl = document.getElementById('delivery-method');
+    function onDeliveryMethodChange(){
+      const isDelivery = deliveryMethodEl.value === 'delivery';
+      document.querySelector('.map-wrap').style.display = isDelivery ? 'flex' : 'none';
+      document.getElementById('deliveryInfo').textContent = isDelivery ? 'ลากหมุดหรือแตะแผนที่เพื่อเลือกตำแหน่ง' : 'เลือกมารับที่ร้าน';
+      if(isDelivery) setTimeout(()=> map.invalidateSize(),120);
+      if(!isDelivery){
+        window.__deliveryFeeComputed = 0;
+        updateTotals();
+      } else {
+        updateDelivery(userLat,userLng);
+      }
+    }
+    deliveryMethodEl.addEventListener('change', onDeliveryMethodChange);
+    onDeliveryMethodChange(); // initial
+
+    // ----- Checkout (submit to Firestore) -----
+    const confirm_button = document.getElementById('confirmBtn');
+
+    confirm_button.addEventListener('click', async ()=>{
+      // Ensure user is authenticated
+      if(!currentUser || !currentUser.uid){
+        alert('กรุณาเข้าสู่ระบบก่อนสั่งออเดอร์');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      if(!cart.length){
+        alert('ไม่มีสินค้าในตะกร้า');
+        return;
+      }
+
+      const paymethod = document.querySelector('input[name="paymethod"]:checked')?.value || 'cash';
+      const deliveryMethod = document.getElementById('delivery-method')?.value || 'pickup';
+
+      // validate credit if needed
+      if(paymethod === 'credit'){
+        const card = document.getElementById('credit-number').value.trim();
+        const name = document.getElementById('credit-name').value.trim();
+        if(!/^\d{16}$/.test(card)){ alert('กรุณากรอกหมายเลขบัตร 16 หลัก'); return; }
+        if(!name){ alert('กรุณากรอกชื่อบนบัตร'); return; }
+      }
+
+      // validate delivery range
+      const dist = calculateDistance(userLat,userLng,shopLat,shopLng);
+      if(deliveryMethod === 'delivery' && dist > 2){
+        alert('ตำแหน่งอยู่นอกพื้นที่จัดส่ง กรุณาเลือกตำแหน่งภายใน 2 กม. หรือเลือกรับที่ร้าน');
+        return;
+      }
+
+      // totals
+      const subtotal = cart.reduce((s,it)=> s + it.price * (it.qty||1), 0);
+      const fee = deliveryMethod === 'delivery' ? window.__deliveryFeeComputed || 0 : 0;
+      const total = Math.round(subtotal + fee);
+
+      // compute and store initial distance (shop -> dest)
+      const initialDistanceKm = (deliveryMethod === 'delivery') ? Math.round(calculateDistance(userLat,userLng,shopLat,shopLng) * 100) / 100 : 0;
+
+      // prepare order data and ensure userId/customer set (required by common security rules)
+      const orderData = {
+        userId: currentUser.uid,
+        customer: currentUser.email || '',
+        cart,
+        subtotal: Math.round(subtotal),
+        deliveryFee: Math.round(fee),
+        total,
+        paymethod,
+        deliveryMethod,
+        deliveryLat: deliveryMethod === 'delivery' ? userLat : null,
+        deliveryLng: deliveryMethod === 'delivery' ? userLng : null,
+        distance: initialDistanceKm,
+        status: "รอดำเนินการ",
+        created: serverTimestamp()
+      };
+
+      // disable button to prevent double-submit
+      confirm_button.disabled = true;
+      confirm_button.style.opacity = 0.7;
+
+      try{
+        const orderRef = await addDoc(collection(db, "orders"), orderData);
+        console.log('Order created with ID:', orderRef.id);
+
+        // show success overlay and redirect to tracking page with id
+        document.getElementById('popupMsg').textContent = 'คำสั่งซื้อถูกสร้างเรียบร้อย (ID: ' + orderRef.id + ')';
+        document.getElementById('popupSuccess').classList.remove('hidden');
+
+        // clear cart storage
+        localStorage.removeItem('cart');
+        cart = [];
+        renderCart();
+
+        setTimeout(()=>{
+          window.location.href = `order_status.html?id=${encodeURIComponent(orderRef.id)}`;
+        }, 1400);
+
+      } catch (err) {
+        console.error('Order submit error:', err);
+        // Re-enable button
+        confirm_button.disabled = false;
+        confirm_button.style.opacity = 1;
+
+        // Friendly error handling for permission problems
+        if(err && err.code === 'permission-denied'){
+          alert('ไม่สามารถบันทึกคำสั่งซื้อ: สิทธิ์ไม่เพียงพอ (Missing or insufficient permissions).\n- ตรวจสอบว่าได้ล็อกอินแล้วหรือไม่\n- ตรวจสอบ Firestore Rules ว่าอนุญาตให้ผู้ใช้สร้างคำสั่งซื้อโดยมี userId == auth.uid\n(ถ้าทดสอบในเครื่อง ให้ใช้บัญชีที่มีสิทธิ์หรือปรับ Rules ชั่วคราว)');
+        } else {
+          alert('เกิดข้อผิดพลาดในการสั่งออเดอร์: ' + (err.message || err));
+        }
+      } finally {
+        // ensure button state consistent
+        confirm_button.disabled = !currentUser;
+        confirm_button.style.opacity = currentUser ? 1 : 0.6;
+      }
+    });
+
+    function closeSuccess(){ document.getElementById('popupSuccess').classList.add('hidden'); }
+
+    // initial totals update
+    updateTotals();
+  </script>
+</body>
+</html>

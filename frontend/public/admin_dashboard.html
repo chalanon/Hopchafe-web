@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Hopchafe</title>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f4f4f4;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #6a4c38;
+    }
+    #orders {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .order {
+      border: 1px solid #eee;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .order:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .order:last-child {
+      margin-bottom: 0;
+    }
+    .order h3 {
+      margin: 0 0 0.5rem;
+      color: #4b3631;
+    }
+    .status {
+      font-weight: bold;
+      color: #b77b4c;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: inline-block;
+      background: rgba(183, 123, 76, 0.1);
+    }
+    
+    button {
+      background: #b77b4c;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #6a4c38;
+    }
+    
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    select {
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>ระบบหลังบ้านร้าน Hopchafe</h1>
+  <div id="user-profile-area" style="display:flex;align-items:center;gap:12px;margin-bottom:24px;"></div>
+  <div id="orders">
+    <div id="order-list">กำลังโหลดข้อมูลออเดอร์...</div>
+  </div>
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    doc,
+    onSnapshot,
+    updateDoc,
+    query,
+    orderBy
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+  import {
+    getAuth,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+  const firebaseConfig = {
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID
+};
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+
+  import { getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async user => {
+    currentUser = user;
+    const profileArea = document.getElementById('user-profile-area');
+    if (user) {
+      // ดึง role จาก Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const role = userData.role || '';
+      // ถ้าไม่ใช่ admin หรือผู้ดูแลร้าน redirect ออก
+      if (role !== 'admin' && role !== 'ผู้ดูแลร้าน') {
+        alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+        window.location.href = 'index.html';
+        return;
+      }
+      // แสดงข้อมูลผู้ใช้
+      profileArea.innerHTML = `
+        <div class="profile-circle">${(userData.username ? userData.username[0] : user.email[0]).toUpperCase()}</div>
+        <span class="profile-name">${userData.username || user.email}</span>
+        <span style="color:#b77b4c;font-weight:bold;">(${role})</span>
+        <button onclick="logout()">ออกจากระบบ</button>
+      `;
+
+      // ดึงออเดอร์แบบ realtime
+      if(document.getElementById('order-list')) {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, orderBy('created', 'desc'));
+        onSnapshot(q, snapshot => {
+          const orderList = document.getElementById('order-list');
+          if (snapshot.empty) {
+            orderList.innerHTML = '<div style="text-align:center;color:#888;">ยังไม่มีออเดอร์</div>';
+            return;
+          }
+          orderList.innerHTML = '';
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const orderId = docSnap.id;
+            const div = document.createElement('div');
+            div.className = 'order';
+            let cartItems = '';
+            if (data.cart && data.cart.length > 0) {
+              cartItems = data.cart.map(item => `
+                <div style="display:flex;justify-content:space-between;padding:8px;background:#f9f9f9;margin:4px 0;border-radius:6px;">
+                  <div>
+                    <strong>${item.name}</strong>
+                    ${item.topping ? `<br><small>ท็อปปิ้ง: ${item.topping}</small>` : ''}
+                    ${item.sweetness ? `<br><small>ความหวาน: ${item.sweetness}</small>` : ''}
+                  </div>
+                  <div style="text-align:right;">
+                    <div>${item.price} บาท × ${item.qty}</div>
+                    <div><strong>${item.price * item.qty} บาท</strong></div>
+                  </div>
+                </div>
+              `).join('');
+            }
+
+            let deliveryInfo = '';
+            if (data.deliveryMethod === 'delivery') {
+              deliveryInfo = `
+                <div style="margin-top:10px;padding:10px;background:#fff8e1;border-radius:6px;">
+                  <div><strong>🚚 ข้อมูลการจัดส่ง</strong></div>
+                  <div>ระยะทาง: ${data.distance || 0} กม.</div>
+                  <div>ค่าจัดส่ง: ${data.deliveryFee || 0} บาท</div>
+                  <div>พิกัด: <a href="https://www.google.com/maps?q=${data.deliveryLat},${data.deliveryLng}" target="_blank" style="color:#1a73e8;">ดูในแผนที่</a></div>
+                </div>
+              `;
+            }
+
+            div.innerHTML = `
+              <div style="border-left:4px solid #b77b4c;padding-left:10px;margin-bottom:15px;">
+                <h3 style="margin:0;">หมายเลขออเดอร์: ${orderId}</h3>
+                <div style="color:#666;font-size:0.9em;">
+                  ${data.created ? new Date(data.created.seconds*1000).toLocaleString('th-TH') : '-'}
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:15px;margin-bottom:15px;">
+                <div>
+                  <div style="font-weight:bold;margin-bottom:5px;">👤 ข้อมูลลูกค้า</div>
+                  <div style="padding:10px;background:#f5f5f5;border-radius:6px;">
+                    <div>${data.customer || 'ไม่ระบุชื่อ'}</div>
+                    <div style="margin-top:5px;">
+                      <strong>วิธีรับสินค้า:</strong> ${data.deliveryMethod === 'delivery' ? 'จัดส่ง' : 'รับที่ร้าน'}
+                    </div>
+                    <div style="margin-top:5px;">
+                      <strong>การชำระเงิน:</strong> ${data.paymethod || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-weight:bold;margin-bottom:5px;">📦 สถานะออเดอร์</div>
+                  <div style="padding:10px;background:#f5f5f5;border-radius:6px;">
+                    <div class="status" style="font-size:1.1em;color:#b77b4c;">
+                      ${data.status || '-'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom:15px;">
+                <div style="font-weight:bold;margin-bottom:5px;">🛒 รายการสินค้า</div>
+                <div style="border:1px solid #eee;border-radius:6px;padding:10px;">
+                  ${cartItems}
+                  <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">
+                    <div style="display:flex;justify-content:space-between;">
+                      <strong>รวมค่าสินค้า</strong>
+                      <strong>${data.total - (data.deliveryFee || 0)} บาท</strong>
+                    </div>
+                    ${data.deliveryFee ? `
+                      <div style="display:flex;justify-content:space-between;margin-top:5px;">
+                        <span>ค่าจัดส่ง</span>
+                        <span>${data.deliveryFee} บาท</span>
+                      </div>
+                    ` : ''}
+                    <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:1.2em;font-weight:bold;color:#b77b4c;">
+                      <span>ยอดรวมทั้งสิ้น</span>
+                      <span>${data.total} บาท</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              ${deliveryInfo}
+            `;
+            // ปุ่มเปลี่ยนสถานะ
+            const btnNextStatus = document.createElement('button');
+            btnNextStatus.textContent = 'ถัดไป';
+            btnNextStatus.style.marginTop = '8px';
+            btnNextStatus.onclick = async () => {
+              const nextStatus = getNextStatus(data.status);
+              if(nextStatus) {
+                await updateDoc(doc(db, 'orders', orderId), { status: nextStatus });
+                alert('อัปเดตสถานะออเดอร์เรียบร้อย');
+              }
+            };
+            div.appendChild(btnNextStatus);
+            orderList.appendChild(div);
+          });
+        });
+      }
+
+    } else {
+      // ยังไม่ล็อกอิน
+      if(profileArea)
+        profileArea.innerHTML = `<a href="admin_login.html">เข้าสู่ระบบ (Admin)</a>`;
+    }
+  });
+
+  window.logout = function() {
+    signOut(auth).then(() => location.reload());
+  };
+
+  function getNextStatus(current) {
+    switch(current) {
+      case 'รอดำเนินการ': return 'กำลังจัดเตรียม';
+      case 'กำลังจัดเตรียม': return 'ออกจัดส่ง';
+      case 'ออกจัดส่ง': return 'ถึงมือแล้ว';
+      default: return null;
+    }
+  }
+</script>
+</body>
+</html>

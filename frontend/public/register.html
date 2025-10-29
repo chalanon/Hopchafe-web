@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครสมาชิก | Hopchafe</title>
+  
+  <!-- Fonts and Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="common.css" rel="stylesheet">
+  
+  <style>
+    body { background: #f8f8f8; font-family: 'Sarabun', sans-serif; margin:0; padding:0; min-height:100vh; display:flex; align-items:center; justify-content:center;}
+    .container { background:#fff; border-radius:16px; box-shadow:0 2px 12px #0002; padding:2.5rem 2rem 2rem 2rem; max-width:430px; width:100%; margin:32px 0;}
+    h2 { color:#6a4c38; text-align:center; margin-bottom:1.5rem; font-size:2rem; font-weight:bold;}
+    form { display:flex; flex-direction:column; gap:1rem;}
+    label { font-weight:600; color:#4e342e; margin-bottom:0.2em;}
+    input { padding:0.7em; border-radius:8px; border:1px solid #ccc; font-size:1em; margin-bottom:0.5em;}
+    button { padding:0.7em 1.2em; border-radius:24px; border:none; font-weight:bold; font-size:1.1em; cursor:pointer; transition:background 0.2s, transform 0.2s;}
+    button:hover { transform: translateY(-2px);}
+    button[type="submit"] { background:#b77b4c; color:#fff; width:100%; margin-top:0.5em;}
+    button[type="submit"]:hover { background:#6a4c38;}
+    .btn-menu { background:#6a4c38; color:#fff; display:inline-flex; align-items:center; gap:0.5em; margin-right:1em;}
+    .btn-menu:hover { background:#8B5E3C;}
+    .button-group { display:flex; align-items:center; justify-content:center; margin-top:1.2em; gap:1rem;}
+    .switch-link { text-align:center; margin-top:1em; color:#6a4c38; cursor:pointer; text-decoration:underline; font-size:0.98em;}
+    @media (max-width:480px) {.button-group { flex-direction:column; gap:0.8rem;} .btn-menu { width:100%; margin-right:0; justify-content:center;}}
+    .error-message { color:#e53935; text-align:center; margin-top:8px; font-size:1em; font-weight:500;}
+    .success-message { color:#388e3c; text-align:center; margin-top:8px; font-size:1em; font-weight:500;}
+    .hidden { display:none;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 🔹 ฟอร์มเข้าสู่ระบบ -->
+    <div id="login-form-block">
+      <h2>เข้าสู่ระบบ</h2>
+      <form id="loginForm">
+        <label for="login-username">อีเมล</label>
+        <input type="email" id="login-username" required autocomplete="username">
+        <label for="login-password">รหัสผ่าน</label>
+        <input type="password" id="login-password" required autocomplete="current-password">
+        <button type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <div class="switch-link" onclick="showRegister()">ยังไม่มีบัญชี? สมัครสมาชิก</div>
+      <div class="button-group">
+        <button class="btn-menu" onclick="window.location.href='menu.html'">
+          <i class="fas fa-arrow-left"></i> กลับไปหน้าเมนู
+        </button>
+      </div>
+      <div id="login-error" class="error-message"></div>
+    </div>
+
+    <!-- 🔹 ฟอร์มสมัครสมาชิก -->
+    <div id="register-form-block" class="hidden">
+      <h2>สมัครสมาชิก</h2>
+      <form id="registerForm">
+        <label for="reg-username">ชื่อผู้ใช้</label>
+        <input type="text" id="reg-username" required>
+        <label for="reg-email">อีเมล</label>
+        <input type="email" id="reg-email" required>
+        <label for="reg-password">รหัสผ่าน</label>
+        <input type="password" id="reg-password" required>
+        <label for="reg-confirm">ยืนยันรหัสผ่าน</label>
+        <input type="password" id="reg-confirm" required>
+        <button type="submit">สมัครสมาชิก</button>
+      </form>
+      <div class="switch-link" onclick="showLogin()">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</div>
+      <div class="button-group">
+        <button class="btn-menu" onclick="window.location.href='menu.html'">
+          <i class="fas fa-arrow-left"></i> กลับไปหน้าเมนู
+        </button>
+      </div>
+      <div id="register-error" class="error-message"></div>
+      <div id="register-success" class="success-message"></div>
+    </div>
+  </div>
+
+  <script>
+    function showRegister() {
+      document.getElementById('login-form-block').classList.add('hidden');
+      document.getElementById('register-form-block').classList.remove('hidden');
+      document.getElementById('login-error').innerText = '';
+    }
+    function showLogin() {
+      document.getElementById('register-form-block').classList.add('hidden');
+      document.getElementById('login-form-block').classList.remove('hidden');
+      document.getElementById('register-error').innerText = '';
+      document.getElementById('register-success').innerText = '';
+    }
+  </script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDlNofFy2Q0xZNrQRGdTT-7Tf3ELoL4gZg",
+  authDomain: "hopchafe-184ad.firebaseapp.com",
+  databaseURL: "https://hopchafe-184ad-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "hopchafe-184ad",
+  storageBucket: "hopchafe-184ad.firebasestorage.app",
+  messagingSenderId: "314546539339",
+  appId: "1:314546539339:web:22b31673662662f27236ce",
+  measurementId: "G-JDMJ19MRNC"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// 🔹 สมัครสมาชิก
+document.getElementById('registerForm').onsubmit = async function(e) {
+  e.preventDefault();
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const role = "user";
+  const errorDiv = document.getElementById('register-error');
+  const successDiv = document.getElementById('register-success');
+  errorDiv.innerText = '';
+  successDiv.innerText = '';
+
+  if (password !== confirm) {
+    errorDiv.innerText = 'รหัสผ่านไม่ตรงกัน';
+    return;
+  }
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      username,
+      role
+    });
+
+    localStorage.setItem('loginUser', JSON.stringify({ email: user.email, uid: user.uid, username, role }));
+    successDiv.innerText = 'สมัครสมาชิกสำเร็จ!';
+
+    // redirect หน้าเดิมหลัง register
+    setTimeout(() => {
+      const redirectURL = sessionStorage.getItem('redirectAfterLogin');
+      sessionStorage.removeItem('redirectAfterLogin');
+
+      if (redirectURL) {
+        window.location.href = redirectURL;
+      } else {
+        showLogin();
+        document.getElementById('login-username').value = email;
+      }
+    }, 1500);
+
+  } catch (err) {
+    console.log('Register Error:', err);
+    if (err.code === 'auth/email-already-in-use') errorDiv.innerText = 'อีเมลนี้ถูกใช้งานแล้ว';
+    else if (err.code === 'auth/invalid-email') errorDiv.innerText = 'อีเมลไม่ถูกต้อง';
+    else if (err.code === 'auth/weak-password') errorDiv.innerText = 'รหัสผ่านควรมีอย่างน้อย 6 ตัวอักษร';
+    else errorDiv.innerText = err.message;
+  }
+};
+
+// 🔹 เข้าสู่ระบบ
+document.getElementById('loginForm').onsubmit = async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorDiv = document.getElementById('login-error');
+  errorDiv.innerText = '';
+
+  if (!email.match(/^\S+@\S+\.\S+$/)) {
+    errorDiv.innerText = 'กรุณากรอกอีเมลที่ถูกต้อง';
+    return;
+  }
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    let role = "user";
+    let username = "";
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      role = data.role || "user";
+      username = data.username || "";
+    }
+
+    localStorage.setItem('loginUser', JSON.stringify({ email: user.email, uid: user.uid, username, role }));
+
+    const redirectURL = sessionStorage.getItem('redirectAfterLogin');
+    sessionStorage.removeItem('redirectAfterLogin');
+
+    if (role === "admin") window.location.href = 'admin-dashboard.html';
+    else if (redirectURL) window.location.href = redirectURL;
+    else window.location.href = 'index.html';
+
+  } catch (err) {
+    console.log('Login Error:', err);
+    if (err.code === 'auth/user-not-found') errorDiv.innerText = 'ไม่พบบัญชีผู้ใช้นี้';
+    else if (err.code === 'auth/wrong-password') errorDiv.innerText = 'รหัสผ่านไม่ถูกต้อง';
+    else if (err.code === 'auth/too-many-requests') errorDiv.innerText = 'ลองใหม่อีกครั้งภายหลัง ระบบล็อกชั่วคราว';
+    else errorDiv.innerText = err.message;
+  }
+};
+</script>
+</body>
+</html>

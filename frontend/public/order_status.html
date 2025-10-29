@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>สถานะออเดอร์ | Hopchafe</title>
+
+  <!-- Leaflet + Font Awesome -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    :root{
+      --bg:#fbf9f6;
+      --card:#ffffff;
+      --primary:#6f4e37;
+      --accent:#c0a98e;
+      --muted:#9e8f84;
+      --shadow: 0 6px 20px rgba(15,15,15,0.08);
+      --radius:14px;
+      --max-width:980px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: "Kanit","Sarabun",system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: linear-gradient(180deg,var(--bg) 0%, #fff 100%);
+      color:#222;
+      padding:22px;
+      display:flex;
+      justify-content:center;
+      -webkit-font-smoothing:antialiased;
+    }
+    .wrap{width:100%;max-width:var(--max-width)}
+    header{display:flex;align-items:center;gap:14px;padding:16px;border-radius:12px;background:linear-gradient(90deg,var(--primary) 40%, var(--accent) 100%);color:#fff;box-shadow:var(--shadow);margin-bottom:14px}
+    header img{width:56px;height:56px;border-radius:10px;object-fit:cover}
+    header .title{font-weight:800;font-size:1.25rem}
+    header .subtitle{font-size:0.95rem;opacity:0.95}
+
+    /* top bar */
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+    .profile{display:flex;gap:12px;align-items:center}
+    .avatar{width:44px;height:44px;border-radius:10px;background:rgba(0,0,0,0.07);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary)}
+    .profile-info{line-height:1}
+    .profile-info .name{font-weight:700;color:var(--primary)}
+    .profile-info .email{font-size:0.9rem;color:var(--muted)}
+    .time-badge{font-weight:700;color:var(--primary);font-size:0.95rem}
+
+    /* layout */
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
+    .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+    .card h2{margin:0 0 12px 0;font-size:1rem;color:var(--primary);display:flex;align-items:center;gap:8px}
+    .muted{color:var(--muted)}
+
+    /* orders list */
+    #ordersList{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding:6px}
+    .order-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);cursor:pointer;background:linear-gradient(180deg,#fff,#fbfbfb)}
+    .order-item.active{border-color:var(--primary);box-shadow:0 6px 18px rgba(111,78,55,0.06)}
+    .order-meta{display:flex;flex-direction:column}
+    .order-id{font-weight:800;color:#3b2d26}
+    .order-time{font-size:0.9rem;color:var(--muted)}
+    .order-status{font-weight:700;color:var(--primary);font-size:0.95rem}
+
+    /* tracking / details */
+    #map{height:380px;border-radius:12px;overflow:hidden}
+    .track-info{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;align-items:center}
+    .chip{background:linear-gradient(180deg,#fff,#fbfbfb);padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,0.03);font-weight:700}
+    .stat{display:flex;flex-direction:column}
+    .stat .label{font-size:0.85rem;color:var(--muted)}
+    .stat .value{font-weight:800;color:var(--primary)}
+    .progress{height:12px;background:linear-gradient(180deg,#f0f0f0,#f8f8f8);border-radius:10px;overflow:hidden;margin-top:8px}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));width:0%}
+
+    /* items */
+    .items{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+    .items .row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.03)}
+
+    /* small helpers */
+    .center{text-align:center}
+    .actions{display:flex;gap:10px;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;font-weight:800;cursor:pointer}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-ghost{background:transparent;border:2px solid var(--primary);color:var(--primary)}
+    .btn-block{width:100%}
+
+    /* responsive */
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr}
+      #map{height:300px}
+    }
+    @media (max-width:480px){
+      header{padding:12px}
+      header img{width:44px;height:44px}
+      .avatar{width:36px;height:36px}
+    }
+
+    /* small scrollbars */
+    #ordersList::-webkit-scrollbar{height:8px;width:8px}
+    #ordersList::-webkit-scrollbar-thumb{background:rgba(111,78,55,0.15);border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap" role="main">
+    <header aria-label="Hopchafe header">
+      <img src="https://play-lh.googleusercontent.com/zEe6Ugn1OoFIeP0bYbzqcnP_f0-5HkaYDfwqpMFfBV7Mz0u93XpKUklXXr6ed4uSx7Q" alt="Hopchafe">
+      <div>
+        <div class="title">Hopchafe</div>
+        <div class="subtitle">ติดตามออเดอร์ของคุณแบบเรียลไทม์</div>
+      </div>
+    </header>
+
+    <div class="topbar" role="region" aria-label="ข้อมูลผู้ใช้">
+      <div class="profile" aria-hidden="false">
+        <div id="avatar" class="avatar">—</div>
+        <div class="profile-info">
+          <div id="userName" class="name">ไม่ได้เข้าสู่ระบบ</div>
+          <div id="userEmail" class="email muted">กรุณาเข้าสู่ระบบ</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="clock" class="time-badge" aria-live="polite">--</div>
+        <button id="authBtn" class="btn btn-primary">Login</button>
+      </div>
+    </div>
+
+    <div class="grid" role="region" aria-label="Order tracking region">
+      <!-- LEFT: orders list -->
+      <aside>
+        <div class="card" aria-labelledby="ordersTitle">
+          <h2 id="ordersTitle"><i class="fas fa-list"></i> คำสั่งซื้อของฉัน</h2>
+          <div id="ordersList" role="list" aria-live="polite">
+            <!-- filled by JS -->
+          </div>
+          <div style="margin-top:10px" class="center">
+            <button id="refreshOrders" class="btn btn-ghost">รีเฟรช</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT: tracking & details -->
+      <main>
+        <div class="card" aria-labelledby="trackTitle">
+          <h2 id="trackTitle"><i class="fas fa-map-marker-alt"></i> ติดตามออเดอร์</h2>
+
+          <!-- map -->
+          <div id="map" aria-label="แผนที่การจัดส่ง"></div>
+
+          <!-- tracking info -->
+          <div class="track-info" aria-hidden="false">
+            <div class="chip">สถานะ: <span id="orderStatus" style="margin-left:6px;font-weight:900;color:var(--primary)"></span></div>
+            <div class="stat">
+              <span class="label">ระยะที่เหลือ</span>
+              <span id="distanceRem" class="value">- กม.</span>
+            </div>
+            <div class="stat">
+              <span class="label">เวลาโดยประมาณ</span>
+              <span id="eta" class="value">- นาที</span>
+            </div>
+            <div style="flex:1"></div>
+            <div>
+              <button id="reportBtn" class="btn btn-ghost">รายงานปัญหา</button>
+            </div>
+          </div>
+
+          <div class="progress" aria-hidden="false" style="margin-top:10px">
+            <i id="progressBar" style="width:0%"></i>
+          </div>
+
+          <!-- items / order details -->
+          <div class="items" id="orderItems" aria-live="polite"></div>
+
+          <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <button id="goMenu" class="btn btn-ghost">กลับไปเมนู</button>
+            <button id="viewOrderBtn" class="btn btn-primary">ดูรายละเอียดคำสั่งซื้อ</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import {
+      getFirestore, doc, getDoc, collection, query, where, orderBy, limit, onSnapshot, getDocs, addDoc
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+    // Firebase config (same as previous file)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlNofFy2Q0xZNrQRGdTT-7Tf3ELoL4gZg",
+      authDomain: "hopchafe-184ad.firebaseapp.com",
+      projectId: "hopchafe-184ad",
+      storageBucket: "hopchafe-184ad.appspot.com",
+      messagingSenderId: "314546539339",
+      appId: "1:314546539339:web:22b31673662662f27236ce"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // UI refs
+    const ordersListEl = document.getElementById('ordersList');
+    const clockEl = document.getElementById('clock');
+    const avatarEl = document.getElementById('avatar');
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    const authBtn = document.getElementById('authBtn');
+
+    const orderStatusEl = document.getElementById('orderStatus');
+    const distanceRemEl = document.getElementById('distanceRem');
+    const etaEl = document.getElementById('eta');
+    const progressBarEl = document.getElementById('progressBar');
+    const orderItemsEl = document.getElementById('orderItems');
+    const viewOrderBtn = document.getElementById('viewOrderBtn');
+    const reportBtn = document.getElementById('reportBtn');
+    const goMenuBtn = document.getElementById('goMenu');
+    const refreshOrdersBtn = document.getElementById('refreshOrders');
+
+    // Helper utilities
+    function formatTimeUTC(date = new Date()){
+      return date.toISOString().replace('T',' ').substring(0,19) + ' UTC';
+    }
+    function prettyCurrency(n){ return (Math.round(n)).toLocaleString('th-TH') + ' ฿'; }
+    function toRad(x){ return x * Math.PI / 180; }
+    function distanceKm(lat1, lon1, lat2, lon2){
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+    // average speed km/h for ETA calculation
+    const AVG_SPEED_KMH = 30; // configurable: 30 km/h (~0.5 km/min)
+
+    function computeETAmins(distanceKm){
+      const kmPerMin = AVG_SPEED_KMH / 60;
+      const mins = distanceKm / kmPerMin;
+      return Math.max(1, Math.round(mins)); // at least 1 min
+    }
+
+    // get orderId from ?id=...
+    function getOrderIdFromURL(){
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    // map setup
+    const shopLat = 6.940180, shopLng = 100.467620;
+    const map = L.map('map', { center:[shopLat,shopLng], zoom:13, zoomControl:true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+    const shopIcon = L.divIcon({ html:`<div style="background:${getComputedStyle(document.documentElement).getPropertyValue('--primary')};color:#fff;padding:6px;border-radius:8px;">🏪</div>`, className:'shopIcon' });
+    const riderIcon = L.divIcon({ html:`<div style="background:#dc3545;color:#fff;padding:6px;border-radius:8px;">🏍️</div>`, className:'riderIcon' });
+    const destIcon = L.divIcon({ html:`<div style="background:${getComputedStyle(document.documentElement).getPropertyValue('--accent')};color:#fff;padding:6px;border-radius:8px;">📦</div>`, className:'destIcon' });
+
+    const shopMarker = L.marker([shopLat,shopLng], { icon: shopIcon }).addTo(map).bindPopup('ร้าน Hopchafe');
+
+    let riderMarker = null;
+    let destMarker = null;
+    let routeLine = null;
+    let orderUnsub = null; // unsubscribe snapshot
+
+    // Render order list (recent)
+    let currentUser = null;
+    let ordersSnapshotUnsub = null;
+    let activeOrderId = getOrderIdFromURL() || null;
+
+    function clearOrdersList(){
+      ordersListEl.innerHTML = '';
+    }
+
+    async function fetchOrdersList(){
+      clearOrdersList();
+      if(!currentUser) {
+        ordersListEl.innerHTML = `<div class="center muted">กรุณาเข้าสู่ระบบเพื่อดูคำสั่งซื้อของคุณ</div>`;
+        return;
+      }
+      const q = query(collection(db,'orders'), where('userId','==', currentUser.uid), orderBy('created','desc'), limit(12));
+      // Use onSnapshot to keep list updated
+      if(ordersSnapshotUnsub) ordersSnapshotUnsub();
+      ordersSnapshotUnsub = onSnapshot(q, snap=>{
+        clearOrdersList();
+        if(snap.empty){
+          ordersListEl.innerHTML = `<div class="center muted">ยังไม่มีคำสั่งซื้อ</div>`;
+          return;
+        }
+        snap.forEach(docSnap=>{
+          const d = docSnap.data();
+          const id = docSnap.id;
+          const time = d.created && d.created.toDate ? d.created.toDate() : null;
+          const itemCount = Array.isArray(d.cart) ? d.cart.reduce((s,i)=> s + (i.qty||1),0) : 0;
+          const div = document.createElement('div');
+          div.className = 'order-item' + (id === activeOrderId ? ' active' : '');
+          div.innerHTML = `
+            <div class="order-meta">
+              <div class="order-id">${id}</div>
+              <div class="order-time muted">${time ? time.toLocaleString() : '—' } • ${itemCount} รายการ</div>
+            </div>
+            <div style="text-align:right">
+              <div class="order-status">${d.status || 'รอดำเนินการ'}</div>
+              <div class="muted" style="font-size:0.85rem">${d.total ? prettyCurrency(d.total) : ''}</div>
+            </div>
+          `;
+          div.addEventListener('click', ()=> openOrder(id));
+          ordersListEl.appendChild(div);
+        });
+      }, err=>{
+        console.error('orders list snapshot error', err);
+        ordersListEl.innerHTML = `<div class="center muted">ไม่สามารถโหลดคำสั่งซื้อได้</div>`;
+      });
+    }
+
+    async function openOrder(orderId){
+      // mark selected in UI
+      activeOrderId = orderId;
+      Array.from(ordersListEl.children).forEach(ch=>{
+        ch.classList.toggle('active', ch.querySelector('.order-id') && ch.querySelector('.order-id').textContent === orderId);
+      });
+      // unsubscribe previous order doc
+      if(orderUnsub) orderUnsub();
+      const docRef = doc(db,'orders',orderId);
+      orderUnsub = onSnapshot(docRef, snap=>{
+        if(!snap.exists()){
+          showMessage('ไม่พบคำสั่งซื้อ', true);
+          return;
+        }
+        const data = snap.data();
+        renderOrderTracking(orderId, data);
+      }, err=>{
+        console.error('order snapshot error', err);
+        showMessage('เกิดข้อผิดพลาดในการดึงข้อมูลคำสั่งซื้อ', true);
+      });
+    }
+
+    function showMessage(msg, isError=false){
+      alert(msg);
+    }
+
+    // Render details & map updates for a given order doc data
+    // expected fields in order doc: cart[], deliveryLat, deliveryLng, riderLat, riderLng, distance (original km), status, total, created
+    let initialDistanceCache = {}; // store original distance per order (fallback if order.distance not present)
+    function renderOrderTracking(orderId, data){
+      // set order status
+      orderStatusEl.textContent = data.status || 'รอดำเนินการ';
+
+      // items
+      orderItemsEl.innerHTML = '';
+      if(Array.isArray(data.cart) && data.cart.length){
+        data.cart.forEach(it=>{
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `<div>${escapeHtml(it.name)} x${it.qty || 1}</div><div style="font-weight:800">${prettyCurrency((it.price||0) * (it.qty||1))}</div>`;
+          orderItemsEl.appendChild(row);
+        });
+      } else {
+        orderItemsEl.innerHTML = '<div class="muted center">ไม่มีรายการ</div>';
+      }
+
+      // Setup dest marker
+      if(data.deliveryLat && data.deliveryLng){
+        const lat = Number(data.deliveryLat);
+        const lng = Number(data.deliveryLng);
+        if(!destMarker) {
+          destMarker = L.marker([lat,lng], { icon: destIcon }).addTo(map).bindPopup('ตำแหน่งจัดส่ง');
+        } else {
+          destMarker.setLatLng([lat,lng]);
+        }
+      } else {
+        if(destMarker) { map.removeLayer(destMarker); destMarker = null; }
+      }
+
+      // Setup rider marker
+      if(data.riderLat && data.riderLng){
+        const rlat = Number(data.riderLat);
+        const rlng = Number(data.riderLng);
+        if(!riderMarker) {
+          riderMarker = L.marker([rlat,rlng], { icon: riderIcon }).addTo(map).bindPopup('พนักงานส่ง');
+        } else {
+          riderMarker.setLatLng([rlat,rlng]);
+        }
+      } else {
+        if(riderMarker) { map.removeLayer(riderMarker); riderMarker = null; }
+      }
+
+      // compute distances
+      let totalDistKm = (data.distance && Number(data.distance)) || null;
+      if(totalDistKm == null && data.deliveryLat && data.deliveryLng){
+        // fallback compute from shop to dest now (one-way)
+        totalDistKm = distanceKm(shopLat,shopLng, Number(data.deliveryLat), Number(data.deliveryLng));
+      }
+      // store initial distance if not in doc
+      if(totalDistKm != null && !initialDistanceCache[orderId]) initialDistanceCache[orderId] = totalDistKm;
+
+      // remaining distance: prefer rider->dest if rider present, otherwise shop->dest
+      let remainingKm = 0;
+      if(data.riderLat && data.riderLng && data.deliveryLat && data.deliveryLng){
+        remainingKm = distanceKm(Number(data.riderLat), Number(data.riderLng), Number(data.deliveryLat), Number(data.deliveryLng));
+      } else if (data.deliveryLat && data.deliveryLng){
+        remainingKm = distanceKm(shopLat, shopLng, Number(data.deliveryLat), Number(data.deliveryLng));
+      } else {
+        remainingKm = 0;
+      }
+
+      // clamp
+      remainingKm = Math.max(0, remainingKm);
+
+      // ETA
+      const etaMins = computeETAmins(remainingKm);
+
+      // progress %: if we know initial distance
+      const initialDist = data.distance ? Number(data.distance) : (initialDistanceCache[orderId] || totalDistKm || 0);
+      let progressPct = 0;
+      if(initialDist && initialDist > 0){
+        progressPct = Math.min(100, Math.round((1 - (remainingKm / initialDist)) * 100));
+        if(progressPct < 0) progressPct = 0;
+      } else {
+        // fallback: when order just started, 0%
+        progressPct = data.status && (data.status.toLowerCase().includes('delivered') || data.status.toLowerCase().includes('สำเร็จ')) ? 100 : 0;
+      }
+
+      // update UI
+      distanceRemEl.textContent = remainingKm.toFixed(2) + ' กม.';
+      etaEl.textContent = (isFinite(etaMins) ? etaMins + ' นาที' : '-');
+      progressBarEl.style.width = progressPct + '%';
+
+      // adjust map view to include all markers
+      const bounds = [];
+      bounds.push([shopLat, shopLng]);
+      if(destMarker) bounds.push(destMarker.getLatLng());
+      if(riderMarker) bounds.push(riderMarker.getLatLng());
+      if(bounds.length){
+        try{ map.fitBounds(bounds, { padding:[60,60], maxZoom:16 }); } catch(e){}
+      } else {
+        map.setView([shopLat,shopLng],13);
+      }
+
+      // show order details view: allow viewOrderBtn to open order page
+      viewOrderBtn.onclick = ()=> {
+        window.location.href = 'order_detail.html?id=' + encodeURIComponent(orderId);
+      };
+
+      // report
+      reportBtn.onclick = async ()=>{
+        if(!currentUser){
+          alert('กรุณาเข้าสู่ระบบเพื่อรายงานปัญหา');
+          return;
+        }
+        const reason = prompt('อธิบายปัญหาที่พบ (ข้อความสั้นๆ):');
+        if(reason){
+          // write to a subcollection "reports" for admins to review (best-effort)
+          try{
+            await addDoc(collection(db,'orders',orderId,'reports'), {
+              author: currentUser.email,
+              text: reason,
+              created: new Date()
+            });
+            alert('ส่งรายงานเรียบร้อยแล้ว ทีมงานจะติดต่อกลับหากจำเป็น');
+          }catch(e){
+            console.error(e);
+            alert('ไม่สามารถส่งรายงานได้ตอนนี้');
+          }
+        }
+      };
+    }
+
+    // render initial selected order (from URL) if present
+    function initSelectedFromURL(){
+      const id = getOrderIdFromURL();
+      if(id) openOrder(id);
+    }
+
+    // Escape helper
+    function escapeHtml(s){
+      if(!s) return '';
+      return String(s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    }
+
+    // Auth
+    onAuthStateChanged(auth, user=>{
+      currentUser = user;
+      if(user){
+        avatarEl.textContent = (user.email||'U').slice(0,2).toUpperCase();
+        userNameEl.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'ผู้ใช้');
+        userEmailEl.textContent = user.email || '';
+        authBtn.textContent = 'ออกจากระบบ';
+        authBtn.onclick = ()=> { if(confirm('ต้องการออกจากระบบหรือไม่?')) { auth.signOut(); window.location.reload(); } };
+        // fetch orders
+        fetchOrdersList();
+        initSelectedFromURL();
+      } else {
+        avatarEl.textContent = '—';
+        userNameEl.textContent = 'ไม่ได้เข้าสู่ระบบ';
+        userEmailEl.textContent = 'กรุณาเข้าสู่ระบบเพื่อดูคำสั่งซื้อ';
+        authBtn.textContent = 'Login / Register';
+        authBtn.onclick = ()=> window.location.href = 'login.html';
+        // clear list
+        clearOrdersList();
+        ordersListEl.innerHTML = `<div class="center muted">กรุณาเข้าสู่ระบบเพื่อดูคำสั่งซื้อของคุณ</div>`;
+      }
+    });
+
+    // realtime clock
+    setInterval(()=>{ clockEl.textContent = formatNowUTC(); }, 1000);
+    function formatNowUTC(){ const d = new Date(); return d.toISOString().replace('T',' ').substring(0,19) + ' UTC'; }
+    clockEl.textContent = formatNowUTC();
+
+    // actions
+    refreshOrdersBtn.addEventListener('click', ()=> fetchOrdersList());
+    goMenuBtn.addEventListener('click', ()=> window.location.href = 'menu.html');
+
+    // cleanup on unload
+    window.addEventListener('beforeunload', ()=>{
+      if(orderUnsub) orderUnsub();
+      if(ordersSnapshotUnsub) ordersSnapshotUnsub();
+    });
+
+    // If page loaded with id param, attempt to open after small delay (in case auth)
+    (function tryOpenInitial(){
+      const id = getOrderIdFromURL();
+      if(id && currentUser){
+        openOrder(id);
+      } else if(id){
+        // onAuthStateChanged handler will call initSelectedFromURL after login
+      }
+    })();
+
+    // allow direct clicking an order from external links: check URL change
+    window.addEventListener('popstate', ()=> {
+      const id = getOrderIdFromURL();
+      if(id) openOrder(id);
+    });
+  </script>
+</body>
+</html>

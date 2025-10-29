@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hop Chafe | หน้าแรก</title>
+  
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+  <!-- Swiper JS -->
+  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f8f8;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Header Styles */
+    .header {
+      width: 100%;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo-link img {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: box-shadow 0.2s;
+    }
+
+    .logo-link img:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .nav-buttons {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 0.6em 1.5em;
+      font-size: 1em;
+      border-radius: 24px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .btn-menu {
+      background: #b77b4c;
+      color: #fff;
+    }
+
+    .btn-menu:hover {
+      background: #a06a3d;
+    }
+
+    .btn-login {
+      background: #6a4c38;
+      color: #fff;
+    }
+
+    .btn-login:hover {
+      background: #563d2d;
+    }
+
+    .profile-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #6a4c38;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .profile-name {
+      font-weight: 600;
+      color: #6a4c38;
+    }
+
+    .logout-btn {
+      background: #e57373;
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 0.4em 1em;
+      cursor: pointer;
+      font-size: 0.95em;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #b71c1c;
+    }
+
+    /* Mobile Menu Toggle */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.8em;
+      cursor: pointer;
+      color: #6a4c38;
+    }
+
+    /* Mobile Dropdown Menu */
+    .mobile-dropdown {
+      position: fixed;
+      top: 60px;
+      right: 0;
+      width: 280px;
+      background: #fff;
+      box-shadow: -2px 4px 12px rgba(0,0,0,0.15);
+      border-radius: 12px 0 0 12px;
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 99;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+
+    .mobile-dropdown.active {
+      display: flex;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .mobile-profile-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: #f8f8f8;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .mobile-profile-section:hover {
+      background: #ececec;
+    }
+
+    .mobile-profile-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #6a4c38;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4em;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .mobile-profile-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .mobile-profile-name {
+      font-weight: 700;
+      color: #6a4c38;
+      font-size: 1.1em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-profile-email {
+      font-size: 0.85em;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-menu-divider {
+      height: 1px;
+      background: #e0e0e0;
+      margin: 8px 0;
+    }
+
+    .mobile-menu-item {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      background: #f8f8f8;
+      border-radius: 10px;
+      font-size: 1.05em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #333;
+      text-align: left;
+    }
+
+    .mobile-menu-item:hover {
+      background: #6a4c38;
+      color: #fff;
+      transform: translateX(4px);
+    }
+
+    .mobile-menu-item.menu-btn {
+      background: #b77b4c;
+      color: #fff;
+    }
+
+    .mobile-menu-item.menu-btn:hover {
+      background: #a06a3d;
+    }
+
+    .mobile-menu-item.login-btn {
+      background: #6a4c38;
+      color: #fff;
+    }
+
+    .mobile-menu-item.login-btn:hover {
+      background: #563d2d;
+    }
+
+    .mobile-logout-btn {
+      width: 100%;
+      padding: 14px 16px;
+      background: #e57373;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mobile-logout-btn:hover {
+      background: #b71c1c;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 98;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    /* Cover Section */
+    .cover-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fff;
+      padding: 20px;
+    }
+
+    .cover-image {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      margin: 20px 0;
+    }
+
+    /* Swiper Styles */
+    .swiper {
+      width: 100%;
+      max-width: 100%;
+      padding: 20px 0;
+      background: #ffffff;
+    }
+
+    .swiper-slide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    .swiper-slide img {
+      width: 100%;
+      max-width: 1200px;
+      height: auto;
+      max-height: 600px;
+      object-fit: contain;
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #b77b4c;
+      background: rgba(255, 255, 255, 0.8);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+      background: #ffffff;
+    }
+
+    .swiper-pagination-bullet {
+      width: 12px;
+      height: 12px;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0.5;
+    }
+
+    .swiper-pagination-bullet-active {
+      opacity: 1;
+      background: #b77b4c;
+    }
+
+    /* Bear Section */
+    .bear-section {
+      text-align: center;
+      padding: 40px 20px;
+      background: #fff;
+    }
+
+    .bear-image {
+      max-width: 420px;
+      width: 100%;
+      height: auto;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .bear-image:hover {
+      box-shadow: 0 4px 16px rgba(183, 123, 76, 0.3);
+    }
+
+    .btn-menu-large {
+      padding: 0.7em 2.5em;
+      font-size: 1.2em;
+      border-radius: 28px;
+      background: #b77b4c;
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(183, 123, 76, 0.2);
+      transition: all 0.3s;
+    }
+
+    .btn-menu-large:hover {
+      background: #a06a3d;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(183, 123, 76, 0.3);
+    }
+
+    /* About Section */
+    .about-section {
+      text-align: center;
+      padding: 60px 20px;
+      background: #fff;
+    }
+
+    .about-section h2 {
+      font-size: 2.5rem;
+      color: #444;
+      font-weight: 900;
+      margin-bottom: 1em;
+      letter-spacing: 1px;
+    }
+
+    .about-content {
+      font-size: 1.1rem;
+      color: #444;
+      line-height: 2;
+      max-width: 600px;
+      margin: 0 auto 30px;
+    }
+
+    .about-line {
+      max-width: 120px;
+      width: 100%;
+      margin-top: 1.5em;
+    }
+
+    /* Footer */
+    footer {
+      width: 100%;
+      margin-top: 40px;
+      background: #f3f3f3;
+      padding: 40px 20px 24px;
+    }
+
+    .footer-content {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 32px;
+    }
+
+    .footer-logo {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .footer-logo img {
+      width: 80px;
+      height: auto;
+      cursor: pointer;
+    }
+
+    .footer-logo-text {
+      font-weight: 700;
+      font-size: 1.1em;
+      margin-top: 8px;
+    }
+
+    .footer-subtitle {
+      color: #789;
+      font-size: 0.98em;
+      margin-top: 4px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 48px;
+      flex: 2;
+      flex-wrap: wrap;
+      min-width: 250px;
+    }
+
+    .footer-column {
+      min-width: 120px;
+    }
+
+    .footer-column-title {
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .footer-column a {
+      color: #444;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 8px;
+      transition: color 0.2s;
+    }
+
+    .footer-column a:hover {
+      color: #b77b4c;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .header {
+        padding: 12px 16px;
+        min-height: 60px;
+      }
+
+      .logo-link img {
+        width: 50px;
+        height: 50px;
+      }
+
+      .nav-buttons {
+        display: none !important;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .profile-name {
+        display: none;
+      }
+
+      .swiper-button-next,
+      .swiper-button-prev {
+        width: 40px;
+        height: 40px;
+      }
+
+      .swiper-slide img {
+        max-height: 400px;
+      }
+
+      .about-section h2 {
+        font-size: 2rem;
+      }
+
+      .about-content {
+        font-size: 1rem;
+      }
+
+      .footer-links {
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .about-section h2 {
+        font-size: 1.8rem;
+      }
+
+      .about-content {
+        font-size: 0.95rem;
+        line-height: 1.8;
+      }
+
+      .btn-menu-large {
+        font-size: 1.1em;
+        padding: 0.6em 2em;
+      }
+
+      .footer-content {
+        gap: 24px;
+      }
+
+      .footer-links {
+        width: 100%;
+      }
+
+      .footer-column {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <a href="index.html" class="logo-link">
+      <img src="https://tse1.mm.bing.net/th/id/OIP.QRJR_4Y3hoyuaVZJGTNuAAHaHa?cb=thvnextc2&rs=1&pid=ImgDetMain&o=7&rm=3" alt="โลโก้ร้านคาเฟ่">
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    
+    <div class="nav-buttons" id="navButtons">
+      <a href="menu.html">
+        <button class="btn btn-menu">เมนู</button>
+      </a>
+      <a id="login-header-btn" href="register.html">
+        <button class="btn btn-login">Login / Register</button>
+      </a>
+      <div id="profile-header-area"></div>
+    </div>
+  </header>
+
+  <!-- Mobile Dropdown Menu -->
+  <div class="overlay" id="overlay" onclick="closeMobileMenu()"></div>
+  <div class="mobile-dropdown" id="mobileDropdown">
+    <div id="mobile-menu-content"></div>
+  </div>
+
+  <!-- Cover Image -->
+  <div class="cover-container">
+    <img class="cover-image" src="https://hopchafe.co.th/wp-content/uploads/2025/01/cover_web_edit-05-05.png" alt="หน้าแรกคาเฟ่">
+    
+    <!-- Swiper Slider -->
+    <div class="swiper mySwiper">
+      <div class="swiper-wrapper">
+        <div class="swiper-slide">
+          <img src="../public/images/chakheaw.png" alt="ชาเขียว">
+        </div>
+        <div class="swiper-slide">
+          <img src="../public/images/soda.png" alt="เมนูโซดา">
+        </div>
+        <div class="swiper-slide">
+          <img src="../public/images/nhafonmaingaow.png" alt="ฝนนี้ไม่เหงา">
+        </div>
+        <div class="swiper-slide">
+          <img src="../public/images/cocoa hall.png" alt="Halloween">
+        </div>
+        <div class="swiper-slide">
+          <img src="../public/images/coconut.png" alt="Coconut Americano">
+        </div>
+      </div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-pagination"></div>
+    </div>
+
+    <!-- Bear Section -->
+    <div class="bear-section">
+      <a href="index.html">
+        <img class="bear-image" src="https://hopchafe.co.th/wp-content/uploads/2025/01/e0b8abe0b8a1e0b8b5e0b980e0b8aae0b8a3e0b8b4e0b89fe0b899e0b989e0b8b3-02.png" alt="Hop Chafe Bear">
+      </a>
+      <br>
+      <a href="menu.html">
+        <button class="btn-menu-large">เข้าสู่หน้าเมนู</button>
+      </a>
+    </div>
+
+    <!-- About Section -->
+    <div class="about-section">
+      <h2>About us</h2>
+      <div class="about-content">
+        เราคือแฟรนไชส์ชานมไข่มุก ที่มีจุดเด่นในเรื่องของรสชาติที่นุ่มนวล<br>
+        ในราคาเพียง <b>20 บาท</b> หรือลูกค้าราคาดีโดนใจและรสชาติที่เป็นเอกลักษณ์ ทำให้ลูกค้าทุกท่านต้องติดใจ และเลือกชานม Hop Chafe เป็นส่วนหนึ่งของทุกวัน ตรงตามคอนเซ็ปต์<br>
+        <b>"HOP UP YOU DAY"</b>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <button onclick="window.scrollTo({top:0,behavior:'smooth'});location.reload();" style="background:none; border:none; cursor:pointer; padding:0;">
+          <img src="https://play-lh.googleusercontent.com/zEe6Ugn1OoFIeP0bYbzqcnP_f0-5HkaYDfwqpMFfBV7Mz0u93XpKUklXXr6ed4uSx7Q" alt="Hopchafe Logo">
+        </button>
+        <div class="footer-logo-text">Hopchafe</div>
+        <div class="footer-subtitle">Franchise, Hopchafe, Tea</div>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-column">
+          <div class="footer-column-title">About</div>
+          <a href="#">About Us</a>
+          <a href="#">Team</a>
+          <a href="#">History</a>
+          <a href="#">Careers</a>
+        </div>
+
+        <div class="footer-column">
+          <div class="footer-column-title">Privacy</div>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms and Conditions</a>
+          <a href="#">Contact Us</a>
+        </div>
+
+        <div class="footer-column">
+          <div class="footer-column-title">Social</div>
+          <a href="https://www.facebook.com/HOPChafeOfficial">Facebook</a>
+          <a href="https://www.instagram.com/hop_chafe/?hl=en">Instagram</a>
+          <a href="#">Line</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile Menu Toggle
+    function toggleMobileMenu() {
+      const dropdown = document.getElementById('mobileDropdown');
+      const overlay = document.getElementById('overlay');
+      dropdown.classList.toggle('active');
+      overlay.classList.toggle('active');
+      renderMobileMenu();
+    }
+
+    function closeMobileMenu() {
+      const dropdown = document.getElementById('mobileDropdown');
+      const overlay = document.getElementById('overlay');
+      dropdown.classList.remove('active');
+      overlay.classList.remove('active');
+    }
+
+    function renderMobileMenu() {
+      const user = JSON.parse(localStorage.getItem('loginUser') || 'null');
+      const mobileContent = document.getElementById('mobile-menu-content');
+      
+      if (!mobileContent) return;
+      
+      if (user) {
+        const initial = (user.username ? user.username[0] : user.email[0]).toUpperCase();
+        const displayName = user.username || user.email;
+        const email = user.email || '';
+        
+        mobileContent.innerHTML = `
+          <div class="mobile-profile-section" onclick="window.location.href='profile.html'">
+            <div class="mobile-profile-circle">${initial}</div>
+            <div class="mobile-profile-info">
+              <div class="mobile-profile-name">${displayName}</div>
+              ${email ? `<div class="mobile-profile-email">${email}</div>` : ''}
+            </div>
+          </div>
+          <div class="mobile-menu-divider"></div>
+          <button class="mobile-menu-item menu-btn" onclick="window.location.href='menu.html'">📋 เมนู</button>
+          <button class="mobile-menu-item" onclick="window.location.href='order-history.html'">📦 ประวัติการสั่ง</button>
+          <button class="mobile-menu-item" onclick="window.location.href='settings.html'">⚙️ ตั้งค่า</button>
+          <div class="mobile-menu-divider"></div>
+          <button class="mobile-logout-btn" onclick="handleLogout()">🚪 ออกจากระบบ</button>
+        `;
+      } else {
+        mobileContent.innerHTML = `
+          <button class="mobile-menu-item menu-btn" onclick="window.location.href='menu.html'">📋 เมนู</button>
+          <div class="mobile-menu-divider"></div>
+          <button class="mobile-menu-item login-btn" onclick="window.location.href='register.html'">🔐 Login / Register</button>
+        `;
+      }
+    }
+
+    // Render Header Profile
+    function renderHeaderProfile() {
+      const user = JSON.parse(localStorage.getItem('loginUser') || 'null');
+      const area = document.getElementById('profile-header-area');
+      const loginBtn = document.getElementById('login-header-btn');
+      
+      if (!area) return;
+      
+      if (user) {
+        const initial = (user.username ? user.username[0] : user.email[0]).toUpperCase();
+        const displayName = user.username || user.email;
+        
+        area.innerHTML = `
+          <div class="profile-area">
+            <div class="profile-circle" style="cursor: pointer;" onclick="window.location.href='profile.html'">${initial}</div>
+            <span class="profile-name">${displayName}</span>
+            <button onclick="handleLogout()" class="logout-btn">ออกจากระบบ</button>
+          </div>
+        `;
+        if (loginBtn) loginBtn.style.display = 'none';
+      } else {
+        area.innerHTML = '';
+        if (loginBtn) loginBtn.style.display = '';
+      }
+    }
+
+    // Handle Logout
+    async function handleLogout() {
+      try {
+        // เตรียมพร้อมสำหรับ Firebase Authentication
+        // await firebase.auth().signOut();
+        
+        localStorage.removeItem('loginUser');
+        location.reload();
+      } catch (error) {
+        console.error('Logout error:', error);
+        alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+      }
+    }
+
+    // Initialize Swiper
+    document.addEventListener('DOMContentLoaded', function() {
+      const swiper = new Swiper(".mySwiper", {
+        slidesPerView: 1,
+        effect: "fade",
+        loop: true,
+        navigation: {
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+        },
+        pagination: {
+          el: ".swiper-pagination",
+          clickable: true,
+        },
+        autoplay: {
+          delay: 5000,
+          disableOnInteraction: false,
+        }
+      });
+      
+      renderHeaderProfile();
+    });
+  </script>
+</body>
+</html>

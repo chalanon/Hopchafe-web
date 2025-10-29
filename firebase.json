@@ -1,4 +1,7 @@
 {
+  "database": {
+    "rules": "json/database.rules.json"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -8,7 +11,59 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/admin",
+        "destination": "/admin/index.html"
+      },
+      {
+        "source": "/admin/login",
+        "destination": "/admin/login.html"
+      },
+      {
+        "source": "/admin/dashboard",
+        "destination": "/admin/dashboard.html"
+      },
+      {
+        "source": "/admin/order",
+        "destination": "/admin/order.html"
+      },
+      {
+        "source": "/menu",
+        "destination": "/menu.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/register",
+        "destination": "/register.html"
+      },
+      {
+        "source": "/checkout",
+        "destination": "/checkout.html"
+      },
+      {
+        "source": "/profile",
+        "destination": "/profile.html"
+      },
+      {
+        "source": "/order_status",
+        "destination": "/order_status.html"
+      },
+      {
+        "source": "/order_history",
+        "destination": "/order_history.html"
+      },
+      {
+        "source": "/contact",
+        "destination": "/contact.html"
+      },
+      {
+        "source": "/images/**",
+        "destination": "/images/**"
+      },
+      {
+        "source": "/",
         "destination": "/index.html"
       }
     ],

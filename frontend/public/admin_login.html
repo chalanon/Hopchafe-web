@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Hopchafe</title>
+    <style>
+        :root {
+            --primary: #6f4e37;
+            --primary-light: #a89f91;
+            --secondary: #f7efe5;
+            --accent: #c0a98e;
+            --text-main: #2e2e2e;
+            --text-light: #fff;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header img {
+            width: 100px;
+            height: auto;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background: var(--accent);
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .back-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            color: var(--accent);
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="header">
+            <img src="https://play-lh.googleusercontent.com/zEe6Ugn1OoFIeP0bYbzqcnP_f0-5HkaYDfwqpMFfBV7Mz0u93XpKUklXXr6ed4uSx7Q" alt="Hopchafe Logo">
+            <h1>Admin Login</h1>
+        </div>
+
+        <form id="adminLoginForm">
+            <div class="form-group">
+                <label for="email">อีเมล</label>
+                <input type="email" id="email" name="email" required>
+                <div class="error-message" id="emailError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">รหัสผ่าน</label>
+                <input type="password" id="password" name="password" required>
+                <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <button type="submit" class="login-btn">เข้าสู่ระบบ</button>
+            <div id="loading">กำลังดำเนินการ...</div>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">← กลับสู่หน้าหลัก</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword
+        } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc
+        } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlNofFy2Q0xZNrQRGdTT-7Tf3ELoL4gZg",
+            authDomain: "hopchafe-184ad.firebaseapp.com",
+            projectId: "hopchafe-184ad",
+            storageBucket: "hopchafe-184ad.appspot.com",
+            messagingSenderId: "314546539339",
+            appId: "1:314546539339:web:22b31673662662f27236ce"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // รีเซ็ตข้อความแสดงข้อผิดพลาด
+            document.getElementById('emailError').style.display = 'none';
+            document.getElementById('passwordError').style.display = 'none';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loading = document.getElementById('loading');
+
+            try {
+                loading.style.display = 'block';
+
+                // เข้าสู่ระบบด้วย Firebase Auth
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // ตรวจสอบ role ใน Firestore
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                const userData = userDoc.data();
+
+                if (userData && (userData.role === 'admin' || userData.role === 'ผู้ดูแลร้าน')) {
+                    // ถ้าเป็น admin หรือผู้ดูแลร้าน ให้ไปที่หน้า dashboard
+                    window.location.href = 'admin_dashboard.html';
+                } else {
+                    // ถ้าไม่ใช่ admin ให้ออกจากระบบและแสดงข้อความ
+                    await auth.signOut();
+                    const errorDiv = document.getElementById('emailError');
+                    errorDiv.textContent = 'คุณไม่มีสิทธิ์เข้าถึงระบบ Admin';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                let errorMessage;
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'อีเมลไม่ถูกต้อง';
+                        document.getElementById('emailError').textContent = errorMessage;
+                        document.getElementById('emailError').style.display = 'block';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage = 'ไม่พบบัญชีผู้ใช้นี้';
+                        document.getElementById('emailError').textContent = errorMessage;
+                        document.getElementById('emailError').style.display = 'block';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'รหัสผ่านไม่ถูกต้อง';
+                        document.getElementById('passwordError').textContent = errorMessage;
+                        document.getElementById('passwordError').style.display = 'block';
+                        break;
+                    default:
+                        errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+                        document.getElementById('emailError').textContent = errorMessage;
+                        document.getElementById('emailError').style.display = 'block';
+                }
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
